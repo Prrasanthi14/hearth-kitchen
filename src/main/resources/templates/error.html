@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error - Hearth Kitchen</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <nav>
+        <span class="brand">🔥 Hearth Kitchen</span>
+        <a th:href="@{/stock}">Stock</a>
+        <a th:href="@{/orders}">Orders</a>
+    </nav>
+
+    <div class="card" style="margin-top: 40px; text-align: center; padding: 40px 20px;">
+        <h1 style="color: #e11d48; margin-top: 0;">Resource Not Found</h1>
+        <p style="font-size: 1.1rem; color: #475569;" th:text="${errorMessage != null ? errorMessage : 'The requested item was not found.'}">
+            The requested resource could not be found.
+        </p>
+        <p style="margin-top: 24px;">
+            <a th:href="@{/orders}" class="btn btn-primary">Back to Orders</a>
+            <a th:href="@{/stock}" class="btn btn-secondary" style="margin-left: 10px;">Back to Stock</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

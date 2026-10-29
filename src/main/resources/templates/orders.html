@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Production Orders - Hearth Kitchen</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <nav>
+        <span class="brand">🔥 Hearth Kitchen</span>
+        <a th:href="@{/stock}">Stock</a>
+        <a th:href="@{/orders}" class="active">Orders</a>
+    </nav>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success message</div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">Error message</div>
+
+    <!-- Create Order Section -->
+    <div class="card">
+        <h2 style="margin-top: 0;">Create New Production Order</h2>
+        <form th:action="@{/orders}" method="post" th:object="${createOrderForm}" class="flex-row">
+            <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                <label for="recipeId">Recipe</label>
+                <select id="recipeId" th:field="*{recipeId}" required style="width: 100%;">
+                    <option value="">-- Select a recipe --</option>
+                    <option th:each="r : ${recipes}" th:value="${r.id}" th:text="${r.name} + ' (yield: ' + ${r.yieldQty.stripTrailingZeros().toPlainString()} + ' ' + ${r.yieldUnit} + '/batch)'"></option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="batches">Batches</label>
+                <input type="number" id="batches" th:field="*{batches}" min="1" required style="width: 100%;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 38px;">Create Order</button>
+        </form>
+    </div>
+
+    <!-- Orders Filter and Listing -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Production Orders</h2>
+        <form th:action="@{/orders}" method="get" style="display: flex; gap: 8px; align-items: center;">
+            <label for="statusFilter" style="margin-bottom: 0;">Status:</label>
+            <select id="statusFilter" name="status">
+                <option value="" th:selected="${currentStatus == null}">All</option>
+                <option th:each="st : ${allStatuses}"
+                        th:value="${st}"
+                        th:text="${st}"
+                        th:selected="${st == currentStatus}">DRAFT</option>
+            </select>
+            <button type="submit" class="btn btn-secondary" style="padding: 6px 12px;">Filter</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Recipe</th>
+            <th>Batches</th>
+            <th>Status</th>
+            <th>Created at</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ord : ${orders}">
+            <td>
+                <a th:href="@{'/orders/' + ${ord.id}}" th:text="'#' + ${ord.id}" style="font-weight: 700; color: #2563eb; text-decoration: none;">#1</a>
+            </td>
+            <td>
+                <a th:href="@{'/orders/' + ${ord.id}}" th:text="${ord.recipe.name}" style="color: inherit; text-decoration: none; font-weight: 500;">Brioche loaf</a>
+            </td>
+            <td th:text="${ord.batches}">1</td>
+            <td>
+                <span class="badge"
+                      th:classappend="${ord.status.name() == 'DRAFT' ? 'badge-draft' : (ord.status.name() == 'RELEASED' ? 'badge-released' : (ord.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled'))}"
+                      th:text="${ord.status}">DRAFT</span>
+            </td>
+            <td th:text="${#temporals.format(ord.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-10-29 16:00:00</td>
+        </tr>
+        <tr th:if="${orders.isEmpty()}">
+            <td colspan="5" class="subtext" style="text-align: center; padding: 24px;">No production orders found.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

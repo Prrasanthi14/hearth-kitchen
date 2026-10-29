@@ -1,0 +1,190 @@
+{
+  "info": {
+    "_postman_id": "hearth-kitchen-postman-collection",
+    "name": "Hearth Kitchen API",
+    "description": "Postman collection for testing Hearth Kitchen central kitchen inventory and production orders. Form-urlencoded requests against server-rendered Spring Boot/Thymeleaf endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "List Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/stock",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["stock"]
+            },
+            "description": "View central kitchen inventory table with On hand, Reserved, and Available balances."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ingredient by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/stock/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["stock", "1"]
+            },
+            "description": "View ingredient details and chronological stock movement ledger (newest first)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders"]
+            },
+            "description": "List all production orders and display the create order form."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Orders by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders?status=RELEASED",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "RELEASED"
+                }
+              ]
+            },
+            "description": "Filter production orders by status (DRAFT, RELEASED, COMPLETED, CANCELLED)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "recipeId",
+                  "value": "1",
+                  "description": "ID of Recipe (e.g. 1 for Brioche loaf)"
+                },
+                {
+                  "key": "batches",
+                  "value": "2",
+                  "description": "Number of batches (min 1)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders"]
+            },
+            "description": "Create a new production order in DRAFT status."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders", "1"]
+            },
+            "description": "View order details, status, timestamps, requirements, and stock movements."
+          },
+          "response": []
+        },
+        {
+          "name": "Release Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders/1/release",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders", "1", "release"]
+            },
+            "description": "Release order: locks order and ingredients, validates stock, reserves stock, writes RESERVE movements."
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders/1/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders", "1", "complete"]
+            },
+            "description": "Complete order: consumes reserved inventory, writes CONSUME movements, marks COMPLETED."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/orders/1/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["orders", "1", "cancel"]
+            },
+            "description": "Cancel order: if RELEASED, unreserves stock and writes UNRESERVE movements; if DRAFT, cancels with no movements."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

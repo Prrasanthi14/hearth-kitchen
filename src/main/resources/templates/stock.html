@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock - Hearth Kitchen</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <nav>
+        <span class="brand">🔥 Hearth Kitchen</span>
+        <a th:href="@{/stock}" class="active">Stock</a>
+        <a th:href="@{/orders}">Orders</a>
+    </nav>
+
+    <h1>Central Stock</h1>
+    <p class="subtext" style="margin-bottom: 20px;">Current inventory balances in display and base units.</p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>On hand</th>
+            <th>Reserved</th>
+            <th>Available</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ing : ${ingredients}">
+            <td>
+                <a th:href="@{'/stock/' + ${ing.id}}" th:text="${ing.name}" style="font-weight: 600; text-decoration: none; color: #2563eb;">Flour</a>
+            </td>
+            <td>
+                <span th:text="${@qty.format(ing.onHand, ing)}">50 kg</span>
+                <span class="subtext" th:text="'(' + ${ing.onHand.stripTrailingZeros().toPlainString()} + ' ' + ${ing.baseUnit} + ')'">(50000 g)</span>
+            </td>
+            <td>
+                <span th:text="${@qty.format(ing.reserved, ing)}">0 kg</span>
+                <span class="subtext" th:text="'(' + ${ing.reserved.stripTrailingZeros().toPlainString()} + ' ' + ${ing.baseUnit} + ')'">(0 g)</span>
+            </td>
+            <td>
+                <strong th:text="${@qty.format(ing.available, ing)}">50 kg</strong>
+                <span class="subtext" th:text="'(' + ${ing.available.stripTrailingZeros().toPlainString()} + ' ' + ${ing.baseUnit} + ')'">(50000 g)</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

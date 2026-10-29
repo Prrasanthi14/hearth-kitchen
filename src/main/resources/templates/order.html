@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Order #' + ${order.id} + ' - Hearth Kitchen'">Order - Hearth Kitchen</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <nav>
+        <span class="brand">🔥 Hearth Kitchen</span>
+        <a th:href="@{/stock}">Stock</a>
+        <a th:href="@{/orders}" class="active">Orders</a>
+    </nav>
+
+    <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+        <a th:href="@{/orders}" style="color: #64748b; text-decoration: none;">&larr; Back to Orders</a>
+        <span style="color: #cbd5e1;">|</span>
+        <a th:href="@{/stock}" style="color: #64748b; text-decoration: none;">View Stock</a>
+    </div>
+
+    <!-- Flash message alerts -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success message</div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">Error message</div>
+
+    <!-- Shortage Box (Shown only if release rejected due to insufficient stock) -->
+    <div th:if="${shortages}" class="shortage-box">
+        <h3>⚠️ Release rejected – not enough stock</h3>
+        <p class="subtext" style="color: #9f1239; margin-bottom: 12px;">
+            The order cannot be released because one or more ingredients do not have sufficient available stock.
+        </p>
+        <table>
+            <thead>
+            <tr>
+                <th>Ingredient</th>
+                <th>Required</th>
+                <th>Available</th>
+                <th>Shortfall</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shortages}">
+                <td>
+                    <a th:href="@{'/stock/' + ${s.ingredientId()}}" th:text="${s.ingredientName()}" style="font-weight: 600; color: #9f1239;">Ingredient</a>
+                </td>
+                <td th:text="${@qty.formatBoth(s.required(), s)}">3 kg (3000 g)</td>
+                <td th:text="${@qty.formatBoth(s.available(), s)}">1 kg (1000 g)</td>
+                <td>
+                    <strong style="color: #e11d48;" th:text="${@qty.formatBoth(s.shortfall(), s)}">2 kg (2000 g)</strong>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Order Header Card -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h1 style="margin-top: 0;" th:text="'Order #' + ${order.id}">Order #1</h1>
+                <p style="font-size: 1.1rem; margin: 4px 0;">
+                    <strong>Recipe:</strong> <span th:text="${order.recipe.name}">Brioche loaf</span> &nbsp;|&nbsp;
+                    <strong>Batches:</strong> <span th:text="${order.batches}">1</span>
+                </p>
+            </div>
+            <div>
+                <span class="badge" style="font-size: 1rem; padding: 6px 14px;"
+                      th:classappend="${order.status.name() == 'DRAFT' ? 'badge-draft' : (order.status.name() == 'RELEASED' ? 'badge-released' : (order.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled'))}"
+                      th:text="${order.status}">DRAFT</span>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;" class="subtext">
+            <div>
+                <strong>Created at:</strong><br>
+                <span th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm:ss')}">-</span>
+            </div>
+            <div>
+                <strong>Released at:</strong><br>
+                <span th:text="${order.releasedAt != null ? #temporals.format(order.releasedAt, 'yyyy-MM-dd HH:mm:ss') : '-'}">-</span>
+            </div>
+            <div>
+                <strong>Completed at:</strong><br>
+                <span th:text="${order.completedAt != null ? #temporals.format(order.completedAt, 'yyyy-MM-dd HH:mm:ss') : '-'}">-</span>
+            </div>
+            <div>
+                <strong>Cancelled at:</strong><br>
+                <span th:text="${order.cancelledAt != null ? #temporals.format(order.cancelledAt, 'yyyy-MM-dd HH:mm:ss') : '-'}">-</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons as separate small POST forms, shown ONLY when status.canMoveTo() allows -->
+        <div class="actions-bar" style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-bottom: 0;">
+            <!-- Release Form -->
+            <form th:if="${order.status.canMoveTo(T(com.hearth.kitchen.model.OrderStatus).RELEASED)}"
+                  th:action="@{'/orders/' + ${order.id} + '/release'}" method="post" class="inline-form">
+                <button type="submit" class="btn btn-primary">Release Order</button>
+            </form>
+
+            <!-- Complete Form -->
+            <form th:if="${order.status.canMoveTo(T(com.hearth.kitchen.model.OrderStatus).COMPLETED)}"
+                  th:action="@{'/orders/' + ${order.id} + '/complete'}" method="post" class="inline-form">
+                <button type="submit" class="btn btn-success">Complete Order</button>
+            </form>
+
+            <!-- Cancel Form -->
+            <form th:if="${order.status.canMoveTo(T(com.hearth.kitchen.model.OrderStatus).CANCELLED)}"
+                  th:action="@{'/orders/' + ${order.id} + '/cancel'}" method="post" class="inline-form">
+                <button type="submit" class="btn btn-danger">Cancel Order</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Requirements Table -->
+    <h2>Ingredient Requirements</h2>
+    <p class="subtext" style="margin-bottom: 12px;" th:if="${order.status.name() == 'DRAFT'}">
+        Live projection from recipe batch quantities vs current stock availability.
+    </p>
+    <p class="subtext" style="margin-bottom: 12px;" th:if="${order.status.name() != 'DRAFT'}">
+        Snapshot recorded at release time vs current stock availability.
+    </p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Ingredient</th>
+            <th>Required</th>
+            <th>Available</th>
+            <th>Shortfall</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="req : ${requirements}" th:classappend="${req.hasShortage() ? 'highlight-danger' : ''}">
+            <td>
+                <a th:href="@{'/stock/' + ${req.ingredient().id}}" th:text="${req.ingredient().name}" style="font-weight: 600; text-decoration: none; color: inherit;">Ingredient</a>
+            </td>
+            <td>
+                <span th:text="${@qty.format(req.required(), req.ingredient())}">3 kg</span>
+                <span class="subtext" th:text="'(' + ${req.required().stripTrailingZeros().toPlainString()} + ' ' + ${req.ingredient().baseUnit} + ')'">(3000 g)</span>
+            </td>
+            <td>
+                <span th:text="${@qty.format(req.available(), req.ingredient())}">50 kg</span>
+                <span class="subtext" th:text="'(' + ${req.available().stripTrailingZeros().toPlainString()} + ' ' + ${req.ingredient().baseUnit} + ')'">(50000 g)</span>
+            </td>
+            <td>
+                <span th:if="${!req.hasShortage()}">0</span>
+                <strong th:if="${req.hasShortage()}" style="color: #e11d48;"
+                        th:text="${@qty.formatBoth(req.shortfall(), req.ingredient())}">2 kg (2000 g)</strong>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Stock Movements Table for this Order -->
+    <h2>Stock Movements for this Order</h2>
+    <table th:if="${!movements.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Time</th>
+            <th>Ingredient</th>
+            <th>Type</th>
+            <th>Quantity</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${movements}">
+            <td th:text="${#temporals.format(m.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-10-29 16:00:00</td>
+            <td>
+                <a th:href="@{'/stock/' + ${m.ingredient.id}}" th:text="${m.ingredient.name}">Flour</a>
+            </td>
+            <td>
+                <span class="badge"
+                      th:classappend="${m.movementType.name() == 'RESERVE' ? 'badge-released' : (m.movementType.name() == 'CONSUME' ? 'badge-completed' : 'badge-cancelled')}"
+                      th:text="${m.movementType}">RESERVE</span>
+            </td>
+            <td th:text="${@qty.format(m.quantity, m.ingredient)} + ' (' + ${m.quantity.stripTrailingZeros().toPlainString()} + ' ' + ${m.ingredient.baseUnit} + ')'">3 kg (3000 g)</td>
+        </tr>
+        </tbody>
+    </table>
+    <p th:if="${movements.isEmpty()}" class="subtext">No stock movements recorded for this order yet.</p>
+</div>
+</body>
+</html>

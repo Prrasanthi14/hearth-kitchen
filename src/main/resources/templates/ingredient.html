@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${ingredient.name} + ' - Hearth Kitchen'">Ingredient - Hearth Kitchen</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <nav>
+        <span class="brand">🔥 Hearth Kitchen</span>
+        <a th:href="@{/stock}" class="active">Stock</a>
+        <a th:href="@{/orders}">Orders</a>
+    </nav>
+
+    <p style="margin-bottom: 12px;"><a th:href="@{/stock}" style="color: #64748b; text-decoration: none;">&larr; Back to Stock</a></p>
+
+    <h1 th:text="${ingredient.name}">Ingredient</h1>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <h3 style="margin-top: 0;">Current Balances</h3>
+        <table style="margin-bottom: 0;">
+            <thead>
+            <tr>
+                <th>Base Unit</th>
+                <th>Display Unit</th>
+                <th>Display Factor</th>
+                <th>On hand</th>
+                <th>Reserved</th>
+                <th>Available</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${ingredient.baseUnit}">g</td>
+                <td th:text="${ingredient.displayUnit}">kg</td>
+                <td th:text="${ingredient.displayFactor}">1000</td>
+                <td>
+                    <span th:text="${@qty.format(ingredient.onHand, ingredient)}">50 kg</span>
+                    <span class="subtext" th:text="'(' + ${ingredient.onHand.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">(50000 g)</span>
+                </td>
+                <td>
+                    <span th:text="${@qty.format(ingredient.reserved, ingredient)}">0 kg</span>
+                    <span class="subtext" th:text="'(' + ${ingredient.reserved.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">(0 g)</span>
+                </td>
+                <td>
+                    <strong th:text="${@qty.format(ingredient.available, ingredient)}">50 kg</strong>
+                    <span class="subtext" th:text="'(' + ${ingredient.available.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">(50000 g)</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Stock Movement History</h2>
+    <p class="subtext" style="margin-bottom: 16px;">Append-only audit ledger (newest first).</p>
+
+    <table th:if="${!movements.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Time</th>
+            <th>Type</th>
+            <th>Quantity</th>
+            <th>Order</th>
+            <th>On hand after</th>
+            <th>Reserved after</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${movements}">
+            <td th:text="${#temporals.format(m.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-10-29 16:00:00</td>
+            <td>
+                <span class="badge"
+                      th:classappend="${m.movementType.name() == 'RESERVE' ? 'badge-released' : (m.movementType.name() == 'CONSUME' ? 'badge-completed' : 'badge-cancelled')}"
+                      th:text="${m.movementType}">RESERVE</span>
+            </td>
+            <td th:text="${@qty.format(m.quantity, ingredient)} + ' (' + ${m.quantity.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">3 kg (3000 g)</td>
+            <td>
+                <a th:href="@{'/orders/' + ${m.order.id}}" th:text="'Order #' + ${m.order.id}">Order #1</a>
+            </td>
+            <td th:text="${@qty.format(m.onHandAfter, ingredient)} + ' (' + ${m.onHandAfter.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">50 kg (50000 g)</td>
+            <td th:text="${@qty.format(m.reservedAfter, ingredient)} + ' (' + ${m.reservedAfter.stripTrailingZeros().toPlainString()} + ' ' + ${ingredient.baseUnit} + ')'">3 kg (3000 g)</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p th:if="${movements.isEmpty()}" class="subtext">No stock movements recorded yet for this ingredient.</p>
+</div>
+</body>
+</html>

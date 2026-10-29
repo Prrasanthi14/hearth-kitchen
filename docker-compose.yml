@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: hearth-db
+    environment:
+      POSTGRES_DB: hearth
+      POSTGRES_USER: hearth
+      POSTGRES_PASSWORD: hearth
+    ports:
+      - "5432:5432"
+    volumes:
+      - hearth-data:/var/lib/postgresql/data
+
+volumes:
+  hearth-data:
