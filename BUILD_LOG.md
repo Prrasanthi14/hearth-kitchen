@@ -4,18 +4,18 @@
 **Repository URL:** TODO  
 **Start (date and time):** THu 29 OCT 3pm 
 **End (date and time):** 6.00pm 
-**Total working time:** 3 hours + testing/debuggin scenarios
+**Total working time:** 3 hours + testing/debugging scenarios
 
 ---
 
 ## 1. Timeline
 
-| Start | End | What I worked on | Outcome | AI tool used? |
-|---|---|---|---|---|
-| TODO | TODO | Project setup, schema migration, seed data, models, and repositories | DB schema and entities created with Flyway migrations | Yes |
-| TODO | TODO | Core business logic, locking strategy, DTOs, and Service layer | OrderService and StockService implemented | Yes |
-| TODO | TODO | Controller layer, Thymeleaf templates, CSS, and PRG flows | Functional UI with zero JavaScript | Yes |
-| TODO | TODO | Automated testing (unit, web, Testcontainers) and documentation | 24 passing tests, README, and Build Log | Yes |
+| Start  | End     | What I worked on                                                                   | Outcome                                                                                                                                         | AI tool used? |
+|--------|---------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| 3:00pm | 3:20 pm | Understanding the requirements and scenarios                                       | Understood the actual requirement, analysed how I can apply the locks, handle concurrency and basic apis needed                                 | NO            |
+| 3.20pm | 4:00 pm | Project setup, schema migration, seed data, project structure creations with files | Project file structure creation initialization, docker set up ,ensuring all the basic files are created and boot run the project without errors | Yes           |
+| 4:00pm | 5:30 pm | MVC layers, Thymeleaf templates and program flows and service logic creations      | Basic Crud operations were working and service logics were added                                                                                | Yes           |
+| 5.40pm | 6:10 pm | Testing the flows for different scenarios                                          | Bugs were spotted and removed during testing the basic workflows are working                                                                    | NO            |
 
 ---
 
@@ -51,28 +51,42 @@
 
 ## 4. AI tool usage
 
-**Tools used:** TODO  
+**Tools used:** Claude, Antigravity IDE  
 **Raw logs:** in the `ai-logs/` folder  
 
-| # | What I asked the AI | What it produced | What I kept, changed or rejected, and why |
-|---|---|---|---|
-| 1 | TODO | TODO | TODO |
-| 2 | TODO | TODO | TODO |
+| # | What I asked the AI                                                                                                                                                                 | What it produced                                                                                                                                 | What I kept, changed or rejected, and why                                                                                                                                          |
+|---|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | Claude - cross checking my understanding of requirements, ensuring the if I could apply any design patterns, how I can ensure the ACID property is properly managed in this project | gave me the project overall structure, and corrected me in case of any assumptions/deviations from requirement                                   |                                                                                                                                                                                    |
+| 2 | Antigravity IDE- actual project structure implementation, logic correction                                                                                                          | Although it gave the basiclogic, during debuggin I caught lots of bugs like updating the tables were not done, it was just plain CRUD operations | I kept the basic code generated but asked it to modify the service logics especially the orders, status changes and updations in the table which were not correct from antigravity |
 
 **Parts I wrote or designed without AI:**
-TODO
+- Spotted the bugs in the code generated by antigravity and fixed them, especially the service logics 
+- Updation of the enums and tables when status changes happened - the code generated by antigravity was just plain CRUD operations, but I added the logic to update the tables when status changes happened.
+- Status changes and the corresponding stock movements were not handled correctly in the generated code, so I added the logic to handle them correctly.
+- Added the pessimistic locking to avoid race conditions and overselling of stock, and wrote the README and build log.
+- Updated the timings displayed on the UI to be more human-readable instead of DB timings
 
 ---
 
 ## 5. Problems and fixes
 
+Ordered by impact (most serious first).
+
 | Problem | How I found it | Fix | Time lost |
 |---|---|---|---|
-| Docker daemon socket / API 1.44 incompatibility | Testcontainers returned HTTP 400 Bad Request on newer Docker Desktop | Added `api.version=1.44` in `docker-java.properties` and Maven surefire plugin | TODO |
-| Java 21 API usage in generated tests (`getFirst()`) | Compiler error during `./mvnw clean spring-boot:run` on Java 17 | Replaced with `.get(0)` for strict Java 17 backward compatibility | TODO |
-| Port 5432 conflict with local Homebrew PostgreSQL service | Connection refused / role "hearth" does not exist error | Stopped host `postgresql@14` service using `brew services stop` to unbind port 5432 for Docker | TODO |
-
----
+| Completing an order didn't update stock in the database (on hand/reserved unchanged after consume) | Manual test: completed an order, then checked the stock page and `select * from ingredient` | The changes to the ingredient objects were not being saved. Made sure `complete()` runs inside `@Transactional`, works on the locked, managed entities loaded in the same transaction, and saves the CONSUME movements. Verified on hand and reserved both drop by the consumed amount | ~15 min |
+| Thymeleaf form data not reaching the backend (fields arrived empty/null) | Manual UI test: submitted the create-order form, but the controller received no values | Form input `name`s didn't match the form object's fields. Bound the form with `th:object="${form}"` and `th:field="*{recipeId}"` / `*{batches}`, and used `@Valid @ModelAttribute` in the controller | ~10 min |
+| "Resource Not Found" page when creating an order on `/orders` | Manual UI test: Create Brioche x1 | TODO: add the cause Antigravity found (e.g. form field name or recipe id didn't match `CreateOrderForm`). Fixed and added logging to the Not Found handler | ~15 min |
+| Backend data not showing on the pages (empty tables or values) | Manual UI test: pages rendered but lists and values were blank | The template used attribute names different from what the controller added to the `Model`. Aligned the names (e.g. `model.addAttribute("orders", ...)` with `th:each="o : ${orders}"`) | ~10 min |
+| Timestamps displayed in UTC instead of IST (e.g. 12:42 instead of 18:12) | Manual check of the orders list and movement history | Kept storing UTC in the database. Added one shared formatter (`@Component("dt")`) converting to Asia/Kolkata and used it in every template | ~10 min |
+| App wouldn't start: `UnsupportedClassVersionError` (class file version 65.0 vs 61.0) | `spring-boot:run` failed at startup | Code was compiled with Java 21 but my local runtime is Java 17. Changed `java.version` to 17 in `pom.xml` and did a clean build | ~5 min |
+| `release version 21 not supported` | Compilation failed after the Java version change | Java 21 was still set in another place in `pom.xml`. Set every Java version entry to 17. Also found that Homebrew `mvn` used a different, newer JDK than my Java 17, so switched to the Maven wrapper `./mvnw` only | ~5 min |
+| Test compilation failed: `cannot find symbol getFirst()` | `testCompile` errors in the generated test class | AI-generated tests used `List.getFirst()`, a Java 21-only method. Replaced it with `get(0)` and added a "Java 17 only" constraint to later AI prompts | ~3 min |
+| `Port 8080 already in use` when starting the app from IntelliJ | IntelliJ run failed after moving the app out of Antigravity | The app was still running as a background process started by Antigravity. Found it with `lsof -i :8080` and stopped it with `kill <PID>` | ~5 min |
+| Docker commands failed: could not connect to the Docker API (`docker.sock` not found) | `docker ps` returned a connection error | The Docker daemon wasn't running. Started Docker Desktop (`open -a Docker`) and re-ran `docker ps` | ~5 min |
+| `git push` failed: password authentication not supported | GitHub rejected my account password over HTTPS | GitHub requires a token. Installed the GitHub CLI (`brew install gh`), ran `gh auth login`, then `gh auth setup-git` | ~10 min |
+| `git push` failed: `'origin' does not appear to be a git repository` | Pushing the branch to GitHub | No remote was configured. Created the GitHub repository and ran `git remote add origin <url>` | ~3 min |
+| `Unknown lifecycle phase "build"` | Maven error when running `mvn clean build` | Maven has no `build` phase. Used `./mvnw clean spring-boot:run` (or `package` to build only) | ~2 min |
 
 ## 6. Testing
 
@@ -111,10 +125,10 @@ TODO
 ## 9. Time summary
 
 | Phase | Minutes |
-|---|---|
-| Understanding the brief and design | TODO |
-| Database and backend | TODO |
-| Frontend | TODO |
-| Testing | TODO |
-| README and build log | TODO |
-| **Total** | TODO |
+|---|---------|
+| Understanding the brief and design | 20  |
+| Database and backend               | 50  |
+| Frontend                           | 15  |
+| Testing                            | 70  |
+| README and build log               | 25  |
+| **Total**                          | 180 |
